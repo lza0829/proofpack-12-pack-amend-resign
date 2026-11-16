@@ -24,3 +24,10 @@ def pack_fingerprint(items: list[dict[str, Any]]) -> str:
     digests = [item_fingerprint(it) for it in sorted_items]
     joined = "\n".join(digests)
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
+def pack_fingerprint_from_digests(pairs: list[tuple[str, str]]) -> str:
+    """Recompute a pack fingerprint from stored (business_key, item_fingerprint) pairs."""
+    ordered = sorted(pairs, key=lambda p: str(p[0]))
+    joined = "\n".join(str(digest) for _, digest in ordered)
+    return hashlib.sha256(joined.encode("utf-8")).hexdigest()

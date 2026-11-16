@@ -7,6 +7,7 @@ from fastapi import HTTPException
 
 from app.db import connect
 from app.engines.checksum import item_fingerprint, pack_fingerprint
+from app.repositories import checklist as check_repo
 from app.repositories import packs as pack_repo
 from app.repositories import samples as sample_repo
 from app.repositories import subjects as subject_repo
@@ -40,6 +41,12 @@ def get_pack(pack_id: int) -> dict[str, Any]:
         p["subject_code"] = s["code"] if s else None
         p["subject_title"] = s["title"] if s else None
         p["items"] = pack_repo.list_items(conn, pack_id)
+        p["fingerprint_history"] = pack_repo.list_fingerprint_history(conn, pack_id)
+        p["amendments"] = pack_repo.list_amendments(conn, pack_id=pack_id)
+        p["checklist"] = check_repo.list_results(conn, pack_id=pack_id)
+        p["checklist_current_version"] = check_repo.all_passed(
+            conn, pack_id, int(p["version"])
+        )
         return p
     finally:
         conn.close()
@@ -102,6 +109,17 @@ def build_pack(batch_id: int) -> dict[str, Any]:
             created_at=now,
         )
         pack_repo.insert_items(conn, pack_id, pack_items)
+        pack_repo.add_fingerprint_history(
+            conn,
+            pack_id=pack_id,
+            version=1,
+            fingerprint=fp,
+            item_count=len(pack_items),
+            state="active",
+            source="build",
+            amendment_id=None,
+            created_at=now,
+        )
         conn.commit()
 
         subject = subject_repo.get_subject(conn, batch["subject_id"])
@@ -115,6 +133,8 @@ def build_pack(batch_id: int) -> dict[str, Any]:
             "item_count": len(pack_items),
             "fingerprint": fp,
             "status": "built",
+            "version": 1,
+            "amend_state": "none",
             "created_at": now,
             "items": pack_repo.list_items(conn, pack_id),
         }

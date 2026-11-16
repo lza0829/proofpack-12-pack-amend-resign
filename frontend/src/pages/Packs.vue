@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { getJSON, postJSON } from '../api'
+import { AMEND_STATE_TAG, amendStateLabel, packStatusLabel } from '../labels'
 
 const batches = ref([])
 const packs = ref([])
@@ -56,6 +57,7 @@ async function build() {
           · 条目 <strong>{{ last.item_count }}</strong>
         </p>
         <p class="mono muted">指纹 {{ last.fingerprint }}</p>
+        <p class="muted">版本 v{{ last.version }} · 补证台可对该包发起补证</p>
       </div>
     </div>
     <div class="panel">
@@ -67,8 +69,10 @@ async function build() {
             <th>对象</th>
             <th>批次</th>
             <th>条目数</th>
+            <th>版本</th>
             <th>指纹</th>
             <th>状态</th>
+            <th>补证态</th>
             <th>时间</th>
           </tr>
         </thead>
@@ -78,8 +82,10 @@ async function build() {
             <td>{{ p.subject_title }}</td>
             <td>{{ p.batch_id }}</td>
             <td>{{ p.item_count }}</td>
+            <td>v{{ p.version }}</td>
             <td class="mono" style="max-width:12rem;overflow:hidden;text-overflow:ellipsis">{{ p.fingerprint }}</td>
-            <td><span class="tag">{{ ({ built: '已生成', checked_ok: '校验通过', checked_fail: '校验未过', released: '已放行', rejected: '已驳回' })[p.status] || p.status }}</span></td>
+            <td><span class="tag" :class="p.status === 'released' ? 'ok' : p.status === 'amend_failed' ? 'danger' : ''">{{ packStatusLabel(p.status) }}</span></td>
+            <td><span class="tag" :class="AMEND_STATE_TAG[p.amend_state]">{{ amendStateLabel(p.amend_state) }}</span></td>
             <td class="mono">{{ p.created_at }}</td>
           </tr>
         </tbody>

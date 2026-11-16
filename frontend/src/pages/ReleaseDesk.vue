@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { getJSON, postJSON } from '../api'
+import { amendStateLabel, packStatusLabel } from '../labels'
 
 const packs = ref([])
 const releases = ref([])
@@ -45,7 +46,7 @@ function decisionLabel(d) {
 <template>
   <div class="page">
     <h1>放行台</h1>
-    <p class="muted">仅清单全部通过才可放行；驳回须填写原因并留痕。</p>
+    <p class="muted">仅当前版本清单全部通过才可放行；补证进行中或补证失败态禁止放行；驳回须填写原因并留痕。</p>
     <p v-if="err" class="tag danger">{{ err }}</p>
     <div class="panel">
       <h3>做出决策</h3>
@@ -54,7 +55,8 @@ function decisionLabel(d) {
           <label>证据包</label>
           <select v-model="packId">
             <option v-for="p in packs" :key="p.id" :value="p.id">
-              {{ p.pack_no }}（{{ ({ built: '已生成', checked_ok: '校验通过', checked_fail: '校验未过', released: '已放行', rejected: '已驳回' })[p.status] || p.status }}）
+              {{ p.pack_no }}（v{{ p.version }} · {{ packStatusLabel(p.status) }}
+              <template v-if="p.amend_state !== 'none'"> · {{ amendStateLabel(p.amend_state) }}</template>）
             </option>
           </select>
         </div>
@@ -94,7 +96,7 @@ function decisionLabel(d) {
               </span>
             </td>
             <td>{{ r.reason }}</td>
-            <td><span class="tag">{{ ({ built: '已生成', checked_ok: '校验通过', checked_fail: '校验未过', released: '已放行', rejected: '已驳回' })[r.pack_status] || r.pack_status }}</span></td>
+            <td><span class="tag">{{ packStatusLabel(r.pack_status) }}</span></td>
             <td class="mono">{{ r.created_at }}</td>
           </tr>
         </tbody>

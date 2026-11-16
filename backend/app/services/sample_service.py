@@ -50,6 +50,15 @@ def dashboard_stats() -> dict[str, Any]:
             "rejected_releases": conn.execute(
                 "SELECT COUNT(*) c FROM release_decisions WHERE decision='reject'"
             ).fetchone()["c"],
+            "amended_packs": conn.execute(
+                "SELECT COUNT(DISTINCT pack_id) c FROM pack_amendments WHERE state='succeeded'"
+            ).fetchone()["c"],
+            "amendment_in_progress": conn.execute(
+                "SELECT COUNT(*) c FROM evidence_packs WHERE amend_state='in_progress'"
+            ).fetchone()["c"],
+            "amendment_failed": conn.execute(
+                "SELECT COUNT(*) c FROM evidence_packs WHERE amend_state='failed'"
+            ).fetchone()["c"],
         }
     finally:
         conn.close()

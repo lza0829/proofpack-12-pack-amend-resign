@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { getJSON, postJSON } from '../api'
+import { amendStateLabel, packStatusLabel } from '../labels'
 
 const packs = ref([])
 const packId = ref(null)
@@ -43,7 +44,7 @@ async function onPackChange() {
 <template>
   <div class="page">
     <h1>校验清单</h1>
-    <p class="muted">基础项：条数一致、键唯一、必填非空。结果与包内条目互证。</p>
+    <p class="muted">基础项：条数一致、键唯一、必填非空。结果与包内条目互证；补证后旧版本结果作废，仅审计可查。</p>
     <p v-if="err" class="tag danger">{{ err }}</p>
     <div class="panel">
       <h3>执行校验</h3>
@@ -52,7 +53,8 @@ async function onPackChange() {
           <label>证据包</label>
           <select v-model="packId" @change="onPackChange">
             <option v-for="p in packs" :key="p.id" :value="p.id">
-              {{ p.pack_no }}（{{ p.item_count }} 条 · {{ ({ built: '已生成', checked_ok: '校验通过', checked_fail: '校验未过', released: '已放行', rejected: '已驳回' })[p.status] || p.status }}）
+              {{ p.pack_no }}（v{{ p.version }} · {{ p.item_count }} 条 · {{ packStatusLabel(p.status) }}
+              <template v-if="p.amend_state !== 'none'"> · {{ amendStateLabel(p.amend_state) }}</template>）
             </option>
           </select>
         </div>
@@ -72,6 +74,7 @@ async function onPackChange() {
         <thead>
           <tr>
             <th>校验项</th>
+            <th>版本</th>
             <th>结果</th>
             <th>说明</th>
             <th>时间</th>
@@ -80,9 +83,10 @@ async function onPackChange() {
         <tbody>
           <tr v-for="r in history" :key="r.id || r.check_code">
             <td>{{ r.check_title }}</td>
+            <td>v{{ r.pack_version }}</td>
             <td>
-              <span class="tag" :class="r.passed ? 'ok' : 'danger'">
-                {{ r.passed ? '通过' : '未通过' }}
+              <span class="tag" :class="r.voided ? 'warn' : r.passed ? 'ok' : 'danger'">
+                {{ r.voided ? '已作废（仅审计）' : r.passed ? '通过' : '未通过' }}
               </span>
             </td>
             <td>{{ r.detail }}</td>
